@@ -8,7 +8,7 @@ import (
 
 const ROLE_PREFIX = "ROLE_"
 
-var ResRoleMap = make(map[string]string)
+var ResRoleMap = [][]string{}
 
 func QualifyRole(role string) string {
 	role = strings.ToUpper(role)
@@ -31,6 +31,10 @@ func QualifyRoles(roles string) []string {
 		result = append(result, role)
 	}
 	return result
+}
+
+func QualifyRolesStr(roles string) string {
+	return strings.Join(QualifyRoles(roles), ",")
 }
 
 func CheckRoles(needRoles, userRoles string) bool {
@@ -64,10 +68,24 @@ func CheckRoles(needRoles, userRoles string) bool {
 	return false
 }
 
-func AddResRoleMap(res, role string) {
+// AddResRoleMap
+func AddResRoleMap(res, roles string) {
 	res = strings.ToLower(res)
 	res = strings.TrimSpace(res)
-	ResRoleMap[res] = QualifyRole(role)
+	roles = QualifyRolesStr(roles)
+	item := []string{res, roles}
+	// overide exists res
+	exist := false
+	for index, vs := range ResRoleMap {
+		rres := vs[0]
+		if rres == res {
+			exist = true
+			ResRoleMap[index] = []string{res, roles}
+		}
+	}
+	if !exist {
+		ResRoleMap = append(ResRoleMap, item)
+	}
 }
 
 func isMatch(res, checkRes string) bool {
@@ -83,9 +101,15 @@ func isMatch(res, checkRes string) bool {
 	return false
 }
 
+// getResNeedRoles
 func getResNeedRoles(checkRes string) string {
 	sb := mcore.NewStringBuffer()
-	for res, role := range ResRoleMap {
+	for _, rm := range ResRoleMap {
+		if len(rm) < 2 {
+			continue
+		}
+		res := rm[0]
+		role := rm[1]
 		if isMatch(res, checkRes) {
 			sb.Append(role, ",")
 		}
@@ -94,6 +118,7 @@ func getResNeedRoles(checkRes string) string {
 	return strings.TrimSuffix(roles, ",")
 }
 
+// IsCanAccessRes
 func IsCanAccessRes(checkRes, userRoles string) bool {
 	checkRes = strings.ToLower(checkRes)
 	checkRes = strings.TrimSpace(checkRes)
@@ -101,6 +126,7 @@ func IsCanAccessRes(checkRes, userRoles string) bool {
 	return CheckRoles(needRoles, userRoles)
 }
 
+// PrintIsCanAccessRes
 func PrintIsCanAccessRes(checkRes, userRoles string, expect bool) {
 	b := IsCanAccessRes(checkRes, userRoles)
 	if b == expect {
@@ -108,6 +134,42 @@ func PrintIsCanAccessRes(checkRes, userRoles string, expect bool) {
 		return
 	}
 	fmt.Printf("CheckAuth, Res:%s UserRoles: %s Result:%v Expect:%v\n", checkRes, userRoles, b, expect)
+}
+
+//
+func PrintResRoleAuthMap() {
+	fmt.Printf("***ResRoleAuth Config***\n")
+	for _, rm := range ResRoleMap {
+		if len(rm) < 2 {
+			continue
+		}
+		fmt.Printf("\t%s : %s\n", rm[0], rm[1])
+	}
+}
+
+// LoadAuthMapFile
+func LoadAuthMapFile(location string) error {
+	fmt.Printf("Load Res Auth Config from File: %s\n", location)
+	lines, err := mcore.ReadFileLines(location)
+	if err != nil {
+		fmt.Printf("Error Load Auth File: %s\n", err)
+		return err
+	}
+	for _, line := range lines {
+		ms := mcore.NewString(line).TrimSpace()
+		// skip comment line or blank line or no = line
+		if ms.IsHasPrefix("#") || ms.IsBlank() || !ms.IsContains("=") {
+			continue
+		}
+		rm := ms.Split("=")
+		if len(rm) < 2 {
+			continue
+		}
+		res := strings.TrimSpace(rm[0])
+		role := strings.TrimSpace(rm[1])
+		AddResRoleMap(res, role)
+	}
+	return nil
 }
 
 func InitAuthMap() {
