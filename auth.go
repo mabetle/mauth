@@ -112,18 +112,25 @@ func PrintIsCanAccessRes(checkRes, userRoles string, expect bool) {
 
 func InitAuthMap() {
 	fmt.Printf("***Init AuthMap\n")
+	// commons
 	AddResRoleMap("/Demo*", "DEMO")
 	AddResRoleMap("/Admin*", "ADMIN")
 
-	AddResRoleMap("/Public*", "ALL")
+	// static assets
+	AddResRoleMap("/public*", "ALL")
+	AddResRoleMap("/mps/public*", "ALL")
+	AddResRoleMap("/fav*", "ALL")
+	AddResRoleMap("/robots*", "ALL")
+	AddResRoleMap("/logo*", "ALL")
+	AddResRoleMap("/assets*", "ALL")
+
+	// for old spring
+	AddResRoleMap("/j_spring*", "ALL")
+
+	// some pages
+	AddResRoleMap("/Help/*", "ALL")
+
 	AddResRoleMap("/AppAjax/*", "ALL")
-	AddResRoleMap("/mps/Public*", "ALL")
-	AddResRoleMap("/favicon.ico", "ALL")
-	AddResRoleMap("/favicon.png", "ALL")
-	AddResRoleMap("/robots.txt", "ALL")
-	AddResRoleMap("/logo.png", "ALL")
-	AddResRoleMap("/logo.gif", "ALL")
-	AddResRoleMap("/j_spring_security_check", "ALL")
-	AddResRoleMap("/Account/*", "ALL")
+	AddResRoleMap("/Account*", "ALL")
 	AddResRoleMap("/AccountAjax/", "ALL")
 }
